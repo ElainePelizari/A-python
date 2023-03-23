@@ -1,60 +1,42 @@
+from queue import PriorityQueue
 from dists import dists, straight_line_dists_from_bucharest
 
-def heuristic(node):
-    return straight_line_dists_from_bucharest[node]
+def h(node):
+    return straight_line_dists_from_bucharest.get(node, 0)
 
-# goal sempre sera 'bucharest'
 def a_star(start, goal='Bucharest'):
-    # Nó = Estado inicial do problema
-    node = start
-    # Custo-Caminho = 0
-    path_cost = 0
-    # Borda = CRIAR-FILA-PRIORIDADES()
-    frontier = []
-    # INSERIR-PRIORIDADES(Borda, Nó)
-    frontier.append((path_cost + heuristic(node), node))
-    # Explorado = Æ
-    explored = set()
-    
-    # REPITA
-    while frontier:
-        # SE VAZIA(Borda) ENTÃO RETORNAR Falha
-        if not frontier:
-            return "Falha"
-        
-        # Nó = REMOVER-PRIORIDADES(Borda)
-        (priority, node) = frontier.pop(0)
-        
-        # SE Nó é Objetivo ENTÃO RETORNAR Solução
-        if node == goal:
-            return path_cost
-        
-        # Explorado = Explorado È {Nó}
-        explored.add(node)
-        
-        # AçõesPossíveis = Ações possíveis a partir de Nó
-        possible_actions = dists[node]
-        
-        # PARA CADA Ação Î AçõesPossíveis FAÇA
-        for action in possible_actions:
-            # Filho = NÓ-FILHO(Nó, Ação)
-            child_node, cost = action
-            child_cost = path_cost + cost
-            
-            # SE Filho não está na Borda E Filho Ï Explorado ENTÃO INSERIR-PRIORIDADES(Borda, Filho)
-            if (child_node not in [x[1] for x in frontier]) and (child_node not in explored):
-                frontier.append((child_cost + heuristic(child_node), child_node))
-            
-            # SENÃO
-            else:
-                # SE Filho Está na Borda E g(n)+h(n) na Borda é maior ENTÃO
-                for i, (priority, frontier_node) in enumerate(frontier):
-                    if frontier_node == child_node and child_cost < path_cost:
-                        # Substitui o nó na Borda por Filho
-                        del frontier[i]
-                        frontier.append((child_cost + heuristic(child_node), child_node))
-                        break
-        
-        # FIM PARA
-    # FIM REPITA
+    frontier = PriorityQueue()
+    frontier.put((0, start))
+    came_from = {}
+    cost_so_far = {}
+    came_from[start] = None
+    cost_so_far[start] = 0
 
+    while not frontier.empty():
+        _, current = frontier.get()
+
+        if current == goal:
+            break
+
+        for neighbor, cost in dists[current]:
+            new_cost = cost_so_far[current] + cost
+            if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
+                cost_so_far[neighbor] = new_cost
+                priority = new_cost + h(neighbor)
+                frontier.put((priority, neighbor))
+                came_from[neighbor] = current
+
+    path = []
+    current = goal
+    while current != start:
+        path.append(current)
+        current = came_from[current]
+    path.append(start)
+    path.reverse()
+
+    return path
+
+# Exemplo de uso
+start = 'Lugoj'
+path = a_star(start)
+print(path)
